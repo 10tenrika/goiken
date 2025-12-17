@@ -60,13 +60,13 @@
       alert('無効なリンクです');
     }
 
-    // 意見送信
+     // 意見送
     async function submitOpinion() {
       const content = document.getElementById('content').value.trim();
       if (!content) return;
 
       await supabase.from('opinions').insert({
-        content: content,
+        document.getElementById('opinion').value = '';        content: content,
         invite_token: token,
         is_shown: false
       });
