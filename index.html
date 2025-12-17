@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>匿名意見箱</title>
+</head>
+<body>
+  <h2>匿名で意見を入力</h2>
+  <textarea id="content" rows="5" style="width:100%"></textarea>
+  <button onclick="submitOpinion()">送信</button>
+
+  <hr />
+
+  <h2>ランダム意見</h2>
+  <button onclick="loadRandom()">表示</button>
+  <p id="random"></p>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://mlylthfuehtoacmcdvzm.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1seWx0aGZ1ZWh0b2FjbWNkdnptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU5MTI5MDUsImV4cCI6MjA4MTQ4ODkwNX0.7LX-pJ0utL7ya2mrJUwQ0ataeU-aRJ0l4zzDbA_1fbw';
+  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('token');
+
+  async function submitOpinion() {
+    const content = document.getElementById('content').value;
+    if (!content || !token) return alert('無効な入力です');
+
+    await supabase.from('opinions').insert({ content, invite_token: token });
+    document.getElementById('content').value = '';
+    alert('送信しました');
+  }
+
+  async function loadRandom() {
+    const { data } = await supabase
+      .from('opinions')
+      .select('content')
+      .eq('invite_token', token);
+
+    if (!data || data.length === 0) return;
+    const random = data[Math.floor(Math.random() * data.length)];
+    document.getElementById('random').innerText = random.content;
+  }
+</script>
+</body>
+</html>
