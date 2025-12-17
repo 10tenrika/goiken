@@ -2,48 +2,102 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>匿名意見箱</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Supabase -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
+    }
+    button {
+      margin-top: 10px;
+      padding: 10px;
+      width: 100%;
+    }
+    #random {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f3f3f3;
+      min-height: 60px;
+    }
+  </style>
 </head>
+
 <body>
-  <h2>匿名で意見を入力</h2>
-  <textarea id="content" rows="5" style="width:100%"></textarea>
+  <h2>匿名意見箱</h2>
+
+  <textarea id="content" placeholder="匿名で意見を入力"></textarea>
   <button onclick="submitOpinion()">送信</button>
 
   <hr />
 
-  <h2>ランダム意見</h2>
-  <button onclick="loadRandom()">表示</button>
-  <p id="random"></p>
+  <button onclick="loadRandom()">ランダムで表示</button>
+  <div id="random"></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-  const SUPABASE_URL = 'https://mlylthfuehtoacmcdvzm.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1seWx0aGZ1ZWh0b2FjbWNkdnptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU5MTI5MDUsImV4cCI6MjA4MTQ4ODkwNX0.7LX-pJ0utL7ya2mrJUwQ0ataeU-aRJ0l4zzDbA_1fbw';
-  const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  <script>
+    // 🔑 Supabase設定（あなたの値に置き換え）
+    const SUPABASE_URL = 'https://xxxxxxxx.supabase.co';
+    const SUPABASE_ANON_KEY = 'public-anon-key';
 
-  const params = new URLSearchParams(window.location.search);
-  const token = params.get('token');
+    const supabase = supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY
+    );
 
-  async function submitOpinion() {
-    const content = document.getElementById('content').value;
-    if (!content || !token) return alert('無効な入力です');
+    // 招待トークン取得
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
 
-    await supabase.from('opinions').insert({ content, invite_token: token });
-    document.getElementById('content').value = '';
-    alert('送信しました');
-  }
+    if (!token) {
+      alert('無効なリンクです');
+    }
 
-  async function loadRandom() {
-    const { data } = await supabase
-      .from('opinions')
-      .select('content')
-      .eq('invite_token', token);
+    // 意見送信
+    async function submitOpinion() {
+      const content = document.getElementById('content').value.trim();
+      if (!content) return;
 
-    if (!data || data.length === 0) return;
-    const random = data[Math.floor(Math.random() * data.length)];
-    document.getElementById('random').innerText = random.content;
-  }
-</script>
+      await supabase.from('opinions').insert({
+        content: content,
+        invite_token: token,
+        is_shown: false
+      });
+
+      document.getElementById('content').value = '';
+      alert('送信しました');
+    }
+
+    // 🎯 ランダム表示（表示済みは除外）
+    async function loadRandom() {
+      const { data } = await supabase
+        .from('opinions')
+        .select('id, content')
+        .eq('invite_token', token)
+        .eq('is_shown', false);
+
+      if (!data || data.length === 0) {
+        document.getElementById('random').innerText =
+          'すべての意見を表示しました';
+        return;
+      }
+
+      const random = data[Math.floor(Math.random() * data.length)];
+      document.getElementById('random').innerText = random.content;
+
+      // 表示済みに更新
+      await supabase
+        .from('opinions')
+        .update({ is_shown: true })
+        .eq('id', random.id);
+    }
+  </script>
 </body>
 </html>
