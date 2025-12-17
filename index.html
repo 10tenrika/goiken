@@ -66,7 +66,7 @@
       if (!content) return;
 
       await supabase.from('opinions').insert({
-        content: text,
+        content: content,
         invite_token: token,
         is_shown: false
       });
